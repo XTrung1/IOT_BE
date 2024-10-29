@@ -1,0 +1,64 @@
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Stream</title>
+    <link rel="stylesheet" href="{% static 'video_processing/css/pc_cam.css' %}">
+</head>
+<body>
+    <div class="main">
+        <div class="title">
+            <h1>PC Cam</h1>
+        </div>
+        <div class="container">
+            <div class="video">
+                <img id="videoStream" src="{% url 'get_pc_cam' %}" alt="Video Stream">
+            </div>
+            <div class="options">
+                <button id="toggleCameraButton" type="button" onclick="toggleCamera()"></button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let isCameraOn = '{{camera_status|yesno:"true,false" }}' === 'true';
+
+        function toggleCamera() {
+            isCameraOn = !isCameraOn;
+
+            const button = document.getElementById("toggleCameraButton");
+            button.textContent = isCameraOn ? "Close Camera" : "Open Camera";
+
+            fetch("{% url 'toggle_pc_cam' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    status: isCameraOn ? 'on' : 'off'
+                })
+            }).then(response => {
+                if (response.ok) {
+                    console.log("Camera toggled successfully.");
+                    return response.json(); 
+                } else {
+                    console.error("Failed to toggle camera.");
+                }
+            }).then(data => {
+                if (data && data.status === true) {
+                    document.getElementById("videoStream").src = "{% url 'get_pc_cam' %}?t=" + new Date().getTime();
+                } else {
+                    document.getElementById("videoStream").src = "";  
+                }
+            }).catch(error => {
+                console.error("Error:", error);
+            });
+        }
+        document.addEventListener("DOMContentLoaded", function() {
+            const button = document.getElementById("toggleCameraButton");
+            button.textContent = isCameraOn ? "Close Camera" : "Open Camera";
+        });
+    </script>    
+</body>
+</html>
